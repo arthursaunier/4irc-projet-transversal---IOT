@@ -19,23 +19,37 @@ PACKET_END = "[END]"
 
 LAST_PACKET = b""
 
+data = {}
+
 while True:
     new_log_packet = radio.receive()
     if new_log_packet != None:
-        request = parse_single_feature_line(protocol.receive_packet(str(new_log_packet)))
+        packet_obj = protocol.receive_packet(str(new_log_packet))
+        request = parse_single_feature_line(packet_obj.encoded_message)
         #ACK
-        if request:
-            if "ACK" in request:
-                #todo 
-                #renvoyer acquittement gateway node
-                pass
-            else:
-                #todo 
-                #envoyer données packet a gateway
+        if request == 2:
+            #renvoyer acquittement gateway node Nok 
+            data["ack"] = 1
+            send_to_gateway(data)
+        elif request == -1:
+            pass
+        else:
+            if "ack" in request and request["ack"] == 0:
+                #envoie ack ok gateway
+                data["ack"] = 0
+                send_to_gateway(data)
+            elif "ack" in request and request["ack"] != 0:
+                #envoie erreur ack gateway
+                data["ack"] = request["ack"]
+                send_to_gateway(data)
+            else: 
+                #renvoie un ack au microbit qui a envoyé  le message
+                data["ack"] = 0
+                radio.send(protocol.send_packet(str(data), packet_obj.from_addr))
 
-                #renvoie un ack a 
-                packet = "ACK"
-                radio.send(protocol.send_packet(str(packet), 100))
+                #todo 
+                # traitement message
+                send_to_gateway(packet_obj.encoded_message)
             
 
                 
