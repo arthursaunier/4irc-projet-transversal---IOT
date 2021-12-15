@@ -20,10 +20,27 @@ PACKET_END = "[END]"
 LAST_PACKET = b""
 
 while True:
-    # redirect sensor incoming packets to the controller
     new_log_packet = radio.receive()
     if new_log_packet != None:
-        send_to_gateway(new_log_packet + PACKET_END)
+        request = parse_single_feature_line(protocol.receive_packet(str(new_log_packet)))
+        #ACK
+        if request:
+            if "ACK" in request:
+                #todo 
+                #renvoyer acquittement gateway node
+                pass
+            else:
+                #todo 
+                #envoyer données packet a gateway
+
+                #renvoie un ack a 
+                packet = "ACK"
+                radio.send(protocol.send_packet(str(packet), 100))
+            
+
+                
+        #UART
+        
 
     # redirect packets from the controller to all sensors
     request = uart.readline()
