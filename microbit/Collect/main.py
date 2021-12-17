@@ -41,7 +41,7 @@ while True:
 
     serial = uart.read()
     if serial != None:
-        LAST_MESSAGE += str(serial).replace("b'", "").replace("'", "")
+        LAST_MESSAGE += str(serial).replace("b'", "").replace("'", "").replace(PACKET_END, "")
 
         radio.send(protocol.send_packet(LAST_MESSAGE, ADDRESS_DEST))
         LAST_MESSAGE = ""
