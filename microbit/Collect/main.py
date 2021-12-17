@@ -1,4 +1,4 @@
-from microbit import uart
+from microbit import uart, display
 import radio
 from protocol import RadioProtocol, parse_single_feature_line
 
@@ -9,11 +9,11 @@ protocol = RadioProtocol(0)
 serial_uart = uart.init(baudrate=115200)
 
 def send_to_gateway(content):
-    uart.write(content)
+    uart.write(str(content).replace("'",'"') + PACKET_END)
 
 PACKET_END = "[END]"
 LAST_MESSAGE = ""
-ADDRESS_DEST = 100
+ADDRESS_DEST = 0
 
 data = {}
 
@@ -22,6 +22,8 @@ while True:
     if new_log_packet != None:
         packet_obj = protocol.receive_packet(str(new_log_packet))
         request = parse_single_feature_line(packet_obj.encoded_message)
+        if not request:
+            break
         if request == 2:
             data["ack"] = 1
             send_to_gateway(data)
@@ -42,6 +44,5 @@ while True:
     serial = uart.read()
     if serial != None:
         LAST_MESSAGE += str(serial).replace("b'", "").replace("'", "").replace(PACKET_END, "")
-
         radio.send(protocol.send_packet(LAST_MESSAGE, ADDRESS_DEST))
         LAST_MESSAGE = ""

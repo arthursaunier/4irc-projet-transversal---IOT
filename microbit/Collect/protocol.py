@@ -1,7 +1,7 @@
 from math import floor
 
 KEY = "secret"
-alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ':.,/-_0123456789{}\" "
+alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ':.,/-_0123456789{}\"[] "
 
 def encrypt(key, clear):
     enc = []
