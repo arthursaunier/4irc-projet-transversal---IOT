@@ -1,43 +1,19 @@
 from math import floor
 
+KEY = "secret"
+alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ':.,/-_0123456789{}\" "
 
-class Encryption():
-    alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ':.,/-_0123456789{}()\" "
+def encrypt(key, clear):
+    enc = []
+    for i in range(len(clear)):
+        enc.append(alphabet[(alphabet.index(clear[i]) + alphabet.index(key[i % len(key)])) % len(alphabet)])
+    return "".join(enc)
 
-    def __init__(self, key):
-        self.key = key
-
-    @staticmethod
-    def chr(index: int) -> str:
-        try:
-            return Encryption.alphabet[index]
-        except IndexError:
-            raise Exception("Encyption does not support <>")
-
-    @staticmethod
-    def ord(char: str) -> int:
-        try:
-            return Encryption.alphabet.index(char)
-        except ValueError:
-            raise Exception("Encyption does not support <>")
-
-    def encrypt(self, clear):
-        enc = []
-        for i in range(len(clear)):
-            key_c = self.key[i % len(self.key)]
-            enc_c = Encryption.chr(
-                (Encryption.ord(clear[i]) + Encryption.ord(key_c)) % len(Encryption.alphabet))
-            enc.append(enc_c)
-        return "".join(enc)
-
-    def decrypt(self, enc):
-        dec = []
-        for i in range(len(enc)):
-            key_c = self.key[i % len(self.key)]
-            dec_c = Encryption.chr((len(Encryption.alphabet) + Encryption.ord(
-                enc[i]) - Encryption.ord(key_c)) % len(Encryption.alphabet))
-            dec.append(dec_c)
-        return "".join(dec)
+def decrypt(key, enc):
+    dec = []
+    for i in range(len(enc)):
+        dec.append(alphabet[(len(alphabet) + alphabet.index(enc[i]) - alphabet.index(key[i % len(key)])) % len(alphabet)])
+    return "".join(dec)
 
 
 class Packet():
@@ -67,37 +43,23 @@ class Packet():
 
         self.checksum = sum
 
-
-class Format():
-    def dumps(self, packet: Packet) -> str:
-        return "|".join([str(packet.to_addr), str(packet.from_addr), str(packet.encoded_message), str(packet.checksum)])
-
-    def parse(self, string: str) -> Packet:
-        packet = string.split("|")
-        return Format.compare_checksum(self, Packet(int(packet[1]), int(packet[0]), packet[2]), packet[3])
-
-    def compare_checksum(self, compute_packet: Packet, received_checksum: str) -> Packet:
-        return compute_packet if int(received_checksum) == compute_packet.checksum else None
-
-
 class RadioProtocol:
-    def __init__(self, address: int, encryption: Encryption, format: Format):
+    def __init__(self, address: int):
         self.addr = address
-        self.encryption = encryption
-        self.format = format
-        self.group = math.floor(address / 100) * 100
+        self.group = floor(address / 100) * 100
 
     def send_packet(self, message, addrDest: int) -> str:
-        packet = Packet(self.addr, addrDest, self.encryption.encrypt(message))
-        return self.format.dumps(self, packet)
+        packet = Packet(self.addr, addrDest, encrypt(KEY, message))
+        return "|".join([str(packet.to_addr), str(packet.from_addr), str(packet.encoded_message), str(packet.checksum)])
 
     def receive_packet(self, string_packet: str):
         if string_packet != None:
-            packet = self.format.parse(self, string_packet)
+            string_packet = string_packet.split("|")
+            packet = Packet(int(string_packet[1]), int(string_packet[0]), string_packet[2])
+            packet = packet if int(string_packet[3]) == packet.checksum else None
             if packet != None:
                 if self.addr == packet.to_addr or self.group == packet.to_addr:
-                    packet.encoded_message = self.encryption.decrypt(
-                        packet.encoded_message)
+                    packet.encoded_message = decrypt(KEY, packet.encoded_message)
                     return packet
                 else:
                     return -1
