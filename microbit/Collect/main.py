@@ -1,6 +1,7 @@
 from microbit import uart, display
 import radio
 from protocol import RadioProtocol, parse_single_feature_line
+from machine import reset
 
 radio.config(group=199, address=0x24667818, length=251)
 radio.on()
@@ -43,6 +44,15 @@ while True:
 
     serial = uart.read()
     if serial != None:
+        if "MicroPython" in serial or 'Type "help()"' in serial:
+            break
         LAST_MESSAGE += str(serial).replace("b'", "").replace("'", "").replace(PACKET_END, "")
-        radio.send(protocol.send_packet(LAST_MESSAGE, ADDRESS_DEST))
-        LAST_MESSAGE = ""
+        if "cmd" in LAST_MESSAGE:
+            cmd = parse_single_feature_line(LAST_MESSAGE)
+            if cmd and cmd["cmd"] == "reset":
+                print("reset" + PACKET_END)
+                LAST_MESSAGE = ""
+                reset()
+        else:
+            radio.send(protocol.send_packet(LAST_MESSAGE, ADDRESS_DEST))
+            LAST_MESSAGE = ""
